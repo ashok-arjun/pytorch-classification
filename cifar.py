@@ -78,6 +78,10 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
+#Data
+parser.add_argument('--data-dir', default='./data', type=str,
+                    help='Data directory')
+
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
@@ -128,10 +132,10 @@ def main():
         num_classes = 100
 
 
-    trainset = dataloader(root='./data', train=True, download=True, transform=transform_train)
+    trainset = dataloader(root=args.data_dir, train=True, download=True, transform=transform_train)
     trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
 
-    testset = dataloader(root='./data', train=False, download=False, transform=transform_test)
+    testset = dataloader(root=args.data_dir, train=False, download=False, transform=transform_test)
     testloader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=args.workers)
 
     # Model
