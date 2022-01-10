@@ -9,6 +9,7 @@ import sys
 import time
 import math
 
+import torch
 import torch.nn as nn
 import torch.nn.init as init
 from torch.autograd import Variable
@@ -49,7 +50,7 @@ def init_params(net):
 def mkdir_p(path):
     '''make dir if not exist'''
     try:
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
     except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass

@@ -9,6 +9,7 @@ import os
 import shutil
 import time
 import random
+import warnings
 
 import torch
 import torch.nn as nn
@@ -23,6 +24,8 @@ import models.cifar as models
 from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 
 
+warnings.filterwarnings(category=UserWarning, action='ignore')
+
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -30,16 +33,16 @@ model_names = sorted(name for name in models.__dict__
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10/100 Training')
 # Datasets
 parser.add_argument('-d', '--dataset', default='cifar10', type=str)
-parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 # Optimization options
 parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('--train-batch', default=128, type=int, metavar='N',
+parser.add_argument('--train-batch', default=256, type=int, metavar='N',
                     help='train batchsize')
-parser.add_argument('--test-batch', default=100, type=int, metavar='N',
+parser.add_argument('--test-batch', default=512, type=int, metavar='N',
                     help='test batchsize')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
@@ -55,6 +58,7 @@ parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
 # Checkpoints
 parser.add_argument('-c', '--checkpoint', default='checkpoint', type=str, metavar='PATH',
                     help='path to save checkpoint (default: checkpoint)')
+parser.add_argument('--eval-checkpoint', type=str, default="")
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 # Architecture
@@ -198,6 +202,10 @@ def main():
 
     if args.evaluate:
         print('\nEvaluation only')
+        checkpoint = torch.load(args.eval_checkpoint)
+        best_acc = checkpoint['best_acc']
+        start_epoch = checkpoint['epoch']
+        model.load_state_dict(checkpoint['state_dict'])
         test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
         print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
         return
@@ -258,9 +266,9 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
+        top1.update(prec1.item(), inputs.size(0))
+        top5.update(prec5.item(), inputs.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -307,7 +315,7 @@ def test(testloader, model, criterion, epoch, use_cuda):
 
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
-        inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
+        inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
         outputs = model(inputs)
@@ -315,9 +323,9 @@ def test(testloader, model, criterion, epoch, use_cuda):
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
+        top1.update(prec1.item(), inputs.size(0))
+        top5.update(prec5.item(), inputs.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
