@@ -29,12 +29,14 @@ class AlexNet(nn.Module):
         )
         self.classifier = nn.Linear(256, num_classes)
 
-    def forward(self, x):
+    def forward(self, x, features=False):
         x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
-
+        feats = x.view(x.size(0), -1)
+        x = self.classifier(feats)
+        if features:
+            return feats, x
+        else:
+            return x
 
 def alexnet(**kwargs):
     r"""AlexNet model architecture from the

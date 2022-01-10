@@ -22,7 +22,7 @@ import torchvision.datasets as datasets
 import models.cifar as models
 
 from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
-
+from knn import fit_knn_model_embeddings, get_knn_predictions
 
 warnings.filterwarnings(category=UserWarning, action='ignore')
 
@@ -32,7 +32,7 @@ model_names = sorted(name for name in models.__dict__
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10/100 Training')
 # Datasets
-parser.add_argument('-d', '--dataset', default='cifar10', type=str)
+parser.add_argument('-d', '--dataset', default='cifar100', type=str)
 parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 # Optimization options
@@ -62,7 +62,7 @@ parser.add_argument('--eval-checkpoint', type=str, default="")
 parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 # Architecture
-parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet20',
+parser.add_argument('--arch', '-a', metavar='ARCH', default='alexnet',
                     choices=model_names,
                     help='model architecture: ' +
                         ' | '.join(model_names) +
@@ -85,6 +85,14 @@ parser.add_argument('--gpu-id', default='0', type=str,
 #Data
 parser.add_argument('--data-dir', default='../data', type=str,
                     help='Data directory')
+
+
+# Custom - embedding KNN
+parser.add_argument('--embedding-knn', action="store_true", default=False,
+                    help="If true, uses model specified by eval-checkpoint, extracts features from embedding,\
+                    evalautes test set by K nearest neighbor")
+parser.add_argument('--knn-k', default=50, type=int,
+                    help='K for KNN query')
 
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
@@ -134,7 +142,6 @@ def main():
     else:
         dataloader = datasets.CIFAR100
         num_classes = 100
-
 
     trainset = dataloader(root=args.data_dir, train=True, download=True, transform=transform_train)
     trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
@@ -199,13 +206,21 @@ def main():
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
         logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
 
-
-    if args.evaluate:
+    if args.evaluate or args.embedding_knn:
         print('\nEvaluation only')
         checkpoint = torch.load(args.eval_checkpoint)
         best_acc = checkpoint['best_acc']
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
+
+    if args.embedding_knn:
+        print('\nEmbedding KNN')
+        index, embeddings, targets = fit_knn_model_embeddings(testloader, model, criterion, use_cuda)
+        _, _ = get_knn_predictions(index, targets, testloader, model, criterion, use_cuda)
+        # knn_model = fit_knn_model_embeddings(trainloader, model, criterion, use_cuda)
+        return
+
+    if args.evaluate:
         test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
         print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
         return

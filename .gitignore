@@ -7,6 +7,8 @@ test.eps
 dev
 monitor.py
 exp
+indexes
+pretrained
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -97,3 +99,4 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
