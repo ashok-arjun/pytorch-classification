@@ -162,10 +162,10 @@ def get_knn_predictions(index, train_targets, testloader, model, criterion, use_
 
             # plot progress
             bar.suffix  = \
-                '({batch}/{size}) Data: {data:.3f}s | \
-                Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | \
-                Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f} \
-                Loss KNN: {loss_knn:.4f} | top1 KNN: {top1_knn: .4f} | top5 KNN: {top5_knn: .4f}'.format(
+                '({batch}/{size}) Data: {data:.3f}s |' + \
+                'Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} |' \
+                'Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}' \
+                'Loss KNN: {loss_knn:.4f} | top1 KNN: {top1_knn: .4f} | top5 KNN: {top5_knn: .4f}'.format(
                         batch=batch_idx + 1,
                         size=len(testloader),
                         data=data_time.avg,
