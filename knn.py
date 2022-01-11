@@ -87,6 +87,8 @@ def fit_knn_model_embeddings(trainloader, model, criterion, use_cuda):
 
     ### Create KNN index
     train_embeddings = train_embeddings.cpu().numpy()
+    np.save("features/cifar100test_alexnet.npy", train_embeddings)
+    
     dim = train_embeddings.shape[1]
     index_path = "indexes/cifar100_index.anng"
     ngtpy.create(index_path, dim, distance_type="Cosine")
